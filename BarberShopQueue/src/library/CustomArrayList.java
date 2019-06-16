@@ -37,12 +37,27 @@ public class CustomArrayList<T> {
 	}
 	
 	/**
+	 * Wrap if a negative index is used. Inspired by Python's slicing behavior :)
+	 * @param position Original position to check
+	 * @return Wraped value if position is negative; same value if position is positive
+	 */
+	protected int wrapPosition(int position) {
+		if (position < 0 && position >= -this.size) {
+			position = this.size + position;
+		}
+		
+		return position;
+	}
+	
+	/**
 	 * Return an object based on position
 	 * 
 	 * @param position Slot in internal array
 	 * @return Generic Object of type T at position
 	 */
 	public T get(int position) {
+		position = this.wrapPosition(position);
+		
 		return this.array[position];
 	}
 	
@@ -54,6 +69,8 @@ public class CustomArrayList<T> {
 	 * @param data Generic Object of type T to set position to
 	 */
 	public void set(int position, T data) {
+		
+		position = this.wrapPosition(position);
 		
 		// Only increase the size if the position was already null.
 		if (this.array[position] == null) {
