@@ -102,6 +102,32 @@ public class SingleLinkList<T> {
 		}
 	}
 	
+	/**
+	 * Removes the head of the list
+	 * 
+	 * @return Data Object type T from head of list or null if empty
+	 */
+	public T removeFirst() {
+		// If the list is empty, just return null
+		if (this.head == null) {
+			return null;
+		}
+				
+		// If the head of the list is not empty
+		else {
+			T deletedData = this.head.getData();
+			
+			// If the head is the only node in the list
+			if (this.head.getNext() == null) {
+				this.head = null;
+			}
+			else {
+				this.head = this.head.getNext();
+			}
+			return deletedData;
+		}
+	}
+	
 	
 	
 	/**
