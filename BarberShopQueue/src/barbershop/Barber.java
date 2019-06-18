@@ -76,9 +76,11 @@ public class Barber {
 	/**
 	 * Called after the barber finishes with a customer so he can get the next customer
 	 * 
+	 * The barber must be working so that the next customer can be admitted.
+	 * 
 	 * @return Next customer waiting in line, null if line is empty
 	 */
 	public Customer getNextCustomer() {
-		return this.barberQueue.dequeue();
+		return this.isWorking ? this.barberQueue.dequeue() : null;
 	}
 }
