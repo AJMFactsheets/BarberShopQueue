@@ -25,11 +25,23 @@ public class BarberShopQueue {
 			System.out.println("Welcome to our Barber Shop!");
 			System.out.println("Type \"Customer checkin <Name> <Preferred Barber> \" to begin!");
 			
-			// All input will be processed as lowercase
-			input = commandInputReader.nextLine().toLowerCase();
+			
+			input = commandInputReader.nextLine();
 			
 			// Space delimited commands
+			
 			delimitedInput = input.split(" ");
+			
+			// All input will be processed as lowercase
+			for (int i = 0; i < delimitedInput.length; i++) {
+				
+				// Assume 3rd word will be the name (2nd since arrays count from 0)
+				if (i == 2) {
+					continue;
+				}
+				
+				delimitedInput[i] = delimitedInput[i].toLowerCase();
+			}
 			
 			// Process first word
 			switch(delimitedInput[0]) {
@@ -66,6 +78,7 @@ public class BarberShopQueue {
 								for (int i = 0; i < workingBarbers.size(); i++) {
 									if (workingBarbers.get(i).getName().equals(delimitedInput[2])) {
 										foundPosition = i;
+										break;
 									}
 								}
 								
@@ -90,12 +103,15 @@ public class BarberShopQueue {
 							else {
 								int foundPosition = -1;
 								
+								// Find barber specified in list of working barbers
 								for (int i = 0; i < workingBarbers.size(); i++) {
 									if (workingBarbers.get(i).getName().equals(delimitedInput[2])) {
 										foundPosition = i;
+										break;
 									}
 								}
 								
+								// If the barber was found, toggle working status
 								if (foundPosition >= 0) {
 									workingBarbers.get(foundPosition).barberCheckOut();
 								}
@@ -104,6 +120,10 @@ public class BarberShopQueue {
 								}
 							}
 							break;
+						}
+						
+						default: {
+							processError();
 						}
 					}
 					break;
@@ -125,8 +145,14 @@ public class BarberShopQueue {
 								processError();
 							}
 							else {
+								// For the new Customer Object to later be enqueued
+								String customerName = delimitedInput[2];
+								Barber customerBarber = null;
+								EnumHairstyle customerHairstyle = null;
+								int barberListPosition = -1;
 								
 								boolean askCustomer = true;
+								
 								System.out.println("Welcome " + delimitedInput[2] + "!");
 								
 								while (askCustomer) {
@@ -135,20 +161,118 @@ public class BarberShopQueue {
 									// Get first word
 									String result = commandInputReader.nextLine().toLowerCase().split(" ")[0];
 									
+									// Ask the customer for the barber's name and try to locate it
 									if (result.startsWith("y")) {
 										askCustomer = false;
-										System.out.println("Enter barber name:");
-										//TODO: finish code in these blocks
+										boolean askName = true;
+										
+										while (askName) {
+											System.out.println("Enter barber name:");
+											
+											String inputName = commandInputReader.nextLine().toLowerCase();
+											
+											// Search through all barbers to find the name the customer requests
+											for (int i = 0; i < workingBarbers.size(); i++) {
+												
+												// This block runs if the barber is found
+												// Duplicates are not handled, so the first barber in the list is taken.
+												if (workingBarbers.get(i).getName().equals(inputName)) {
+													askName = false;
+													customerBarber = workingBarbers.get(i);
+													barberListPosition = i;
+													break;
+												}
+											}
+											
+											if (barberListPosition < 0) {
+												System.err.println("Could not find barber with name \"" + inputName + "\"");
+											}
+											
+										}
 										
 									}
+									// Put customer in shortest barber queue
 									else if (result.startsWith("n")) {
 										askCustomer = false;
+										
+										// Position 0 is the barber's position in the list
+										// Position 1 is the value of the position
+										int[] shortestLine = new int[2];
+										shortestLine[0] = -1;
+										shortestLine[1] = Integer.MAX_VALUE;
+										
+										// Search each working barber and use queue size as an estimate
+										// Could change if statistics on the time for each haircut were known ahead of time
+										for (int i = 0; i < workingBarbers.size(); i++) {
+											if (workingBarbers.get(i).getQueueSize() < shortestLine[1]) {
+												shortestLine[0] = i;
+												shortestLine[1] = workingBarbers.get(i).getQueueSize();
+											}
+										}
+										
+										if (shortestLine[0] == -1) {
+											throw new IllegalStateException("Could not find empty queue! Too many customers!");
+										}
+										else {
+											// Assign barber to customer
+											customerBarber = workingBarbers.get(shortestLine[0]);
+											barberListPosition = shortestLine[0];
+										}
 									}
+									
+									// Get customer hairstyle type
+									askCustomer = true;
+									while (askCustomer) {
+										System.out.println("Enter the number of the hairstyle you would like to get today: ");
+										System.out.println("1. " + EnumHairstyle.STANDARD.toString());
+										System.out.println("2. " + EnumHairstyle.PREMIUM.toString());
+										System.out.println("3. " + EnumHairstyle.SUPREME.toString());
+										
+										// Had to resort to parseInt since nextInt caused the Scanner buffer to bug out.
+										int hairstyleChoice = Integer.parseInt(commandInputReader.nextLine());
+										
+										// Invalid number, so ask again
+										if (hairstyleChoice < 1 || hairstyleChoice > 3) {
+											System.err.println("Please enter 1, 2, or 3.");
+										}
+										
+										// Valid number, so stop asking and assign hairstyle to customer
+										else {
+											askCustomer = false;
+											
+											switch (hairstyleChoice) {
+												case 1: {
+													customerHairstyle = EnumHairstyle.STANDARD;
+													break;
+												}
+												case 2: {
+													customerHairstyle = EnumHairstyle.PREMIUM;
+													break;
+												}
+												case 3: {
+													customerHairstyle = EnumHairstyle.SUPREME;
+													break;
+												}
+												default: {
+													throw new IllegalStateException("Improper Hairstyle Enum");
+												}
+											}
+										}
+									}
+									
+									// Create Customer Object and add to appropriate Barber Queue
+									Customer customer = new Customer(customerName, customerBarber, customerHairstyle);
+									
+									// Hooray! Finally got the customer in the system! Pray for no NPEs!
+									workingBarbers.get(barberListPosition).addCustomer(customer);
+									
+									System.out.println("\nThank you! You will be called when your Barber is ready.\n");
 								}
 								break;
 							}
 						}
 						
+						// Currently a dummy command which simply thanks the customer
 						case "checkout": {
 							
 							if (delimitedInput[2].equals("")) {
@@ -161,10 +285,17 @@ public class BarberShopQueue {
 							
 							break;
 						}
+						
+						default: {
+							processError();
+						}
 					}
 					break;
 				}
-					
+				
+				default: {
+					processError();
+				}
 			}
 		}
 		

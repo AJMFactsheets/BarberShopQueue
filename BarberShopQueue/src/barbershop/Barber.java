@@ -58,6 +58,16 @@ public class Barber {
 	}
 	
 	/**
+	 * The current length of the barber's queue
+	 * The size of his waitlist
+	 * 
+	 * @return Size of barber's queue
+	 */
+	public int getQueueSize() {
+		return this.barberQueue.getSize();
+	}
+	
+	/**
 	 * Called when the Barber clocks out for work
 	 */
 	public void barberCheckOut() {
